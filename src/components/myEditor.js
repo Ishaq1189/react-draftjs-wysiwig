@@ -1,48 +1,57 @@
-import React, { Component } from 'react';
-import { EditorState, convertToRaw } from 'draft-js';
-import draftToHtml from 'draftjs-to-html';
-import { Editor } from 'react-draft-wysiwyg';
-import { PreviewModal } from './previewModal';
+import React, { useState } from "react";
+import {
+  EditorState,
+  convertToRaw,
+  ContentState,
+  convertFromHTML,
+} from "draft-js";
+import draftToHtml from "draftjs-to-html";
+import htmlToDraft from "html-to-draftjs";
+import { Editor } from "react-draft-wysiwyg";
+import { PreviewModal } from "./previewModal";
 
-const getHtml = editorState => draftToHtml(convertToRaw(editorState.getCurrentContent()));
+const blocksFromHtml = htmlToDraft(
+  "<p>Hi <strong>{{username}}</strong></p> <p>You have been successfully registered in the system. Your OTP to login to system is {{otp}}</p> <p>&nbsp;Regards,</p> <p><strong><em>CEREBRUM</em></strong></p> "
+);
+const { contentBlocks, entityMap } = blocksFromHtml;
+const contentState = ContentState.createFromBlockArray(
+  contentBlocks,
+  entityMap
+);
 
-class MyEditor extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      editorState: EditorState.createEmpty()
-    };
-  }
+const getHtml = (editorState) =>
+  draftToHtml(convertToRaw(editorState.getCurrentContent()));
 
-  onEditorStateChange = editorState => {
-    this.setState({
-      editorState
-    });
+const MyEditor = () => {
+  const [editorState, setEditorState] = useState(() =>
+    EditorState.createWithContent(contentState)
+  );
+
+  const onEditorStateChange = (editorState) => {
+    setEditorState(editorState);
   };
 
-  render() {
-    const { editorState } = this.state;
-
-    return (
-      <div>
-        <Editor
-          editorState={editorState}
-          wrapperClassName="rich-editor demo-wrapper"
-          editorClassName="demo-editor"
-          onEditorStateChange={this.onEditorStateChange}
-          placeholder="The message goes here..."
-        />
-        <h4>Underlying HTML</h4>
-        <div className="html-view">
-          {getHtml(editorState)}
-        </div>
-        <button className="btn btn-success" data-toggle="modal" data-target="#previewModal">
-          Preview message
-        </button>
-        <PreviewModal output={getHtml(editorState)} />
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <Editor
+        editorState={editorState}
+        wrapperClassName="rich-editor demo-wrapper"
+        editorClassName="demo-editor"
+        onEditorStateChange={onEditorStateChange}
+        placeholder="The message goes here..."
+      />
+      <h4>Underlying HTML</h4>
+      <div className="html-view">{getHtml(editorState)}</div>
+      <button
+        className="btn btn-success"
+        data-toggle="modal"
+        data-target="#previewModal"
+      >
+        Preview message
+      </button>
+      <PreviewModal output={getHtml(editorState)} />
+    </div>
+  );
+};
 
 export { MyEditor };
